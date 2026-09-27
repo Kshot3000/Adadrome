@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adadrome — Cardano's Liquidity Hub</title>
+<meta name="description" content="Adadrome: the ve(3,3) DEX on Cardano. Swap, provide liquidity, lock DROME for veDROME, vote gauges, earn bribes.">
+<link rel="stylesheet" href="css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">◈</div>
+    <div>Adadrome<small>CARDANO LIQUIDITY HUB</small></div>
+  </div>
+  <nav class="nav">
+    <button data-view="swap" class="active">Swap</button>
+    <button data-view="liq">Liquidity</button>
+    <button data-view="vote">Vote</button>
+    <button data-view="bribes">Bribes</button>
+    <button data-view="dash">Dashboard</button>
+  </nav>
+  <div class="top-right">
+    <span class="epoch-chip" id="epochChip">Epoch <b>#–</b></span>
+    <button class="btn" id="walletBtn">Connect Wallet</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ SWAP ============ -->
+  <section class="view active" id="view-swap">
+    <div class="hero">
+      <h1>Trade on <span class="grad">Cardano's liquidity hub</span></h1>
+      <p>Deep ADA, stablecoin and native-token liquidity — 100% of swap fees go to veDROME voters.</p><br>
+      <span class="demo-note">⚠ Demo build — quotes, balances and trades are simulated, not on-chain.</span>
+    </div>
+    <div class="card swap-box">
+      <h3>Swap</h3><p class="sub">Best-price routing across stable &amp; volatile pools</p>
+      <div class="token-row">
+        <input id="swapFromAmt" type="number" min="0" placeholder="0.0">
+        <button class="tok-btn" id="swapFromBtn"></button>
+      </div>
+      <div style="font-size:12px;color:var(--mut);text-align:right;margin:4px 2px" id="fromBal"></div>
+      <div class="swap-mid"><button id="flipBtn" title="Flip">⇅</button></div>
+      <div class="token-row">
+        <input id="swapToAmt" type="text" placeholder="0.0" readonly>
+        <button class="tok-btn" id="swapToBtn"></button>
+      </div>
+      <div style="font-size:12px;color:var(--mut);text-align:right;margin:4px 2px" id="toBal"></div>
+      <div class="quote-rows" id="quoteRows"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+        <label class="mut" for="slipSel">Slippage</label>
+        <select id="slipSel" class="field" style="width:auto;padding:7px 10px;background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:9px">
+          <option value="0.1">0.1%</option><option value="0.5" selected>0.5%</option><option value="1">1.0%</option><option value="3">3.0%</option>
+        </select>
+      </div>
+      <button class="btn wfull" id="swapBtn" disabled>Swap</button>
+    </div>
+    <div class="card" style="max-width:460px;margin:16px auto 0">
+      <h3>Recent activity</h3><p class="sub">Your simulated transactions</p>
+      <div class="quote-rows" id="txList"></div>
+    </div>
+  </section>
+
+  <!-- ============ LIQUIDITY ============ -->
+  <section class="view" id="view-liq">
+    <div class="section-title"><h2>Liquidity</h2>
+      <div class="tabs">
+        <button data-liqtab="classic" class="active">Classic pools</button>
+        <button data-liqtab="cl">Concentrated</button>
+      </div>
+    </div>
+    <div id="classicSection">
+    <div class="card" style="margin-bottom:16px">
+      <h3>Your positions</h3><div class="quote-rows" id="myPos" style="margin-top:10px"></div>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Pool</th><th class="num">TVL</th><th class="num">Volume 24h</th><th class="num">APR</th><th class="num"></th></tr></thead>
+      <tbody id="liqRows"></tbody>
+    </table></div>
+    </div>
+    <div id="clSection" style="display:none">
+      <div class="card" style="margin-bottom:16px;border-color:rgba(124,92,255,.35)">
+        <h3>⚡ Concentrated liquidity <span class="pill vol" style="margin-left:6px">v2</span></h3>
+        <p class="sub">Uniswap v3-style tick positions. Pick a price range, earn boosted fees while the price stays inside it. Out of range = single-sided, no fees.</p>
+      </div>
+      <div class="cl-grid" id="clPools"></div>
+      <div class="section-title"><h2 style="font-size:17px">My concentrated positions</h2></div>
+      <div class="nft-grid" id="clPositions"></div>
+    </div>
+  </section>
+
+  <!-- ============ VOTE ============ -->
+  <section class="view" id="view-vote">
+    <div class="section-title"><h2>Vote &amp; Lock</h2><span class="mut">Epoch ends in <b id="epochLeft2" style="color:var(--amber)">–</b></span></div>
+    <div class="grid2">
+      <div class="card lock-card">
+        <h3>Lock DROME → veDROME</h3>
+        <p class="sub">Vote-escrowed NFT. Longer lock = more power (max 4 years). Voters earn 100% of pool fees + bribes.</p>
+        <div class="field"><label>Amount (<span id="lockBal"></span>)</label><input id="lockAmt" type="number" min="0" placeholder="0.0"></div>
+        <div class="field"><label>Lock duration: <b id="lockWeeksLbl" style="color:var(--txt)">52 weeks</b></label>
+          <input type="range" id="lockWeeks" min="1" max="208" value="52"></div>
+        <div class="lock-meta"><span>Voting power</span><b id="lockPowerPrev">0 veDROME</b></div>
+        <button class="btn wfull" id="lockBtn" style="margin-top:14px">Lock &amp; mint veNFT</button>
+        <div id="lockList"></div>
+      </div>
+      <div class="card">
+        <h3>Claim rewards</h3>
+        <p class="sub">Collect trading fees and bribes earned by your veNFT votes.</p>
+        <div class="lock-meta"><span>Your voting power</span><b id="vpTotal">0 veDROME</b></div>
+        <button class="btn ghost wfull" id="claimBtn" style="margin-top:14px">Claim fees + bribes</button>
+        <div class="how" style="grid-template-columns:1fr;margin-top:18px">
+          <div class="card"><span class="step">HOW IT WORKS</span>
+            <p style="margin-top:8px">Each 5-day Cardano epoch, veDROME holders vote DROME emissions toward gauges. LPs in winning gauges earn emissions; voters collect the pool's swap fees plus any bribes. Lock longer for more power — mercenary capital gets nothing.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="section-title"><h2>Gauge voting</h2><span class="mut">Weights must total <b id="voteSum" style="font-size:15px">0%</b></span></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Gauge</th><th class="num">Votes</th><th class="num">Bribes</th><th class="num">Bribe APR</th><th>Your weight</th></tr></thead>
+      <tbody id="voteRows"></tbody>
+    </table></div>
+    <button class="btn wfull" id="castBtn" style="margin-top:14px;max-width:320px">Cast votes for this epoch</button>
+  </section>
+
+  <!-- ============ BRIBES ============ -->
+  <section class="view" id="view-bribes">
+    <div class="section-title"><h2>Bribe Marketplace</h2><span class="mut">Protocols pay veDROME voters to direct emissions at their pools</span></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Gauge</th><th>Active bribes</th><th class="num">Value</th><th>By</th><th class="num"></th></tr></thead>
+      <tbody id="bribeRows"></tbody>
+    </table></div>
+    <div class="how">
+      <div class="card"><span class="step">FOR PROTOCOLS</span><h4>Rent liquidity, don't buy it</h4><p>Deposit bribes on your gauge and veDROME voters route DROME emissions to your pool — often 3–5× cheaper than direct LP incentives.</p></div>
+      <div class="card"><span class="step">FOR VOTERS</span><h4>Get paid to vote</h4><p>Vote for bribed gauges and claim the bribes plus 100% of that pool's trading fees at epoch end.</p></div>
+      <div class="card"><span class="step">FLYWHEL</span><h4>The ve(3,3) loop</h4><p>Bribes → votes → emissions → deeper liquidity → more volume → more fees → more locks. That's the flywheel Aerodrome proved on Base, rebuilt for Cardano.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section class="view" id="view-dash">
+    <div class="section-title"><h2>Protocol Dashboard</h2><span class="mut">Simulated demo figures</span></div>
+    <div class="stats">
+      <div class="stat"><div class="k">Total Value Locked</div><div class="v" id="dTvl">–</div></div>
+      <div class="stat"><div class="k">Volume 24h</div><div class="v" id="dVol">–</div></div>
+      <div class="stat"><div class="k">Fees 24h</div><div class="v up" id="dFees">–</div></div>
+      <div class="stat"><div class="k">DROME price</div><div class="v" id="dDrome">–</div></div>
+      <div class="stat"><div class="k">Emissions / epoch</div><div class="v" id="dEmis">–</div></div>
+      <div class="stat"><div class="k">veDROME voters</div><div class="v" id="dVoters">–</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h3>Volume by pool (24h)</h3><p class="sub">Simulated</p><canvas class="chart" id="volChart"></canvas></div>
+      <div class="card"><h3>Top pools by volume</h3><p class="sub">Live gauge APRs</p>
+        <div class="tbl-wrap" style="border:none"><table style="min-width:0">
+          <thead><tr><th>Pool</th><th class="num">Vol 24h</th><th class="num">TVL</th><th class="num">APR</th></tr></thead>
+          <tbody id="topRows"></tbody>
+        </table></div>
+      </div>
+    </div>
+    <div class="how">
+      <div class="card"><span class="step">TOKENOMICS</span><h4>ve(3,3) on Cardano</h4><p>DROME is emitted each 5-day epoch to gauges by veDROME vote. Lockers get a rebase offsetting dilution, 100% of trading fees, and all bribes for gauges they vote on. No team farm — emissions only flow where voters point them.</p></div>
+      <div class="card"><span class="step">POOLS</span><h4>Stable + volatile</h4><p>Stable pools (x³y + xy³ ≈ k) for pegged assets like DJED/iUSD with 0.02–0.05% fees; volatile pools (x·y = k) for everything else at 0.30%. Concentrated liquidity ranges coming in v2.</p></div>
+      <div class="card"><span class="step">GOVERNANCE</span><h4>5-day epochs</h4><p>Cardano-native 5-day epochs. Vote, claim, and re-lock on epoch boundaries. veNFTs are transferable — vote power trades on secondary markets.</p></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- token picker -->
+<div class="overlay" id="pickerOverlay"><div class="modal">
+  <button class="x" id="pickerClose">✕</button><h3>Select token</h3><p class="sub">Demo balances shown</p>
+  <div class="tok-list" id="tokList"></div>
+</div></div>
+
+<!-- deposit -->
+<div class="overlay" id="depOverlay"><div class="modal">
+  <button class="x" id="depClose">✕</button><h3 id="depTitle">Add liquidity</h3><p class="sub">50/50 by pool ratio — auto-staked in gauge</p>
+  <div class="field"><label id="depALbl">Token A amount</label><input id="depA" type="number" min="0" placeholder="0.0"></div>
+  <div class="field"><label>Token B amount (auto)</label><input id="depB" type="text" readonly placeholder="0.0"></div>
+  <button class="btn wfull" id="depBtn">Add liquidity</button>
+</div></div>
+
+<!-- bribe -->
+<div class="overlay" id="bribeOverlay"><div class="modal">
+  <button class="x" id="bribeClose">✕</button><h3>Add bribe</h3><p class="sub">Gauge: <b id="bribePoolName"></b></p>
+  <div class="field"><label>Bribe amount (in that gauge's bribe token)</label><input id="bribeAmt" type="number" min="0" placeholder="0.0"></div>
+  <button class="btn wfull" id="bribeBtn">Deposit bribe</button>
+</div></div>
+
+<!-- CL pool detail -->
+<div class="overlay" id="clDetailOverlay"><div class="modal" style="max-width:560px">
+  <button class="x" id="clDetailClose">✕</button><h3 id="clDetailTitle">Pool</h3><p class="sub" id="clDetailSub"></p>
+  <canvas class="chart" id="depthChart" style="height:220px"></canvas>
+  <p class="mut" style="margin-top:8px">Liquidity depth by price · gold line = current price. Green band = your selected range.</p>
+</div></div>
+
+<!-- CL new position -->
+<div class="overlay" id="clAddOverlay"><div class="modal" style="max-width:480px">
+  <button class="x" id="clAddClose">✕</button><h3 id="clAddTitle">New position</h3><p class="sub" id="clAddSub"></p>
+  <div class="field"><label>Price range</label>
+    <div class="presets">
+      <button data-preset="5">±5%</button><button data-preset="10" class="active">±10%</button>
+      <button data-preset="25">±25%</button><button data-preset="full">Full</button><button data-preset="custom">Custom</button>
+    </div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="field"><label>Min price</label><input id="clMinP" type="text"></div>
+    <div class="field"><label>Max price</label><input id="clMaxP" type="text"></div>
+  </div>
+  <div class="field"><label>Deposit amount (<span id="clA0Bal"></span>)</label><input id="clA0" type="number" min="0" placeholder="0.0"></div>
+  <div class="quote-rows" id="clCalcBox" style="background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 14px"></div>
+  <button class="btn wfull" id="clMintBtn" disabled>Mint position NFT</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  <div><b>Adadrome</b> — a ve(3,3) DEX concept for Cardano. Demo build: all figures simulated.</div>
+  <div style="margin-top:6px">Built by <b>@kshot9000</b></div>
+  <div class="don">prl1p62v09vuzyd8kdz9l23jaf3kph4wwx6jqcmhkkhg8lhr2qlxky8psu3zw9d</div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
