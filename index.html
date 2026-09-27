@@ -178,10 +178,24 @@
 
 <!-- deposit -->
 <div class="overlay" id="depOverlay"><div class="modal">
-  <button class="x" id="depClose">✕</button><h3 id="depTitle">Add liquidity</h3><p class="sub">50/50 by pool ratio — auto-staked in gauge</p>
-  <div class="field"><label id="depALbl">Token A amount</label><input id="depA" type="number" min="0" placeholder="0.0"></div>
-  <div class="field"><label>Token B amount (auto)</label><input id="depB" type="text" readonly placeholder="0.0"></div>
-  <button class="btn wfull" id="depBtn">Add liquidity</button>
+  <button class="x" id="depClose">✕</button><h3 id="depTitle">Add liquidity</h3>
+  <div class="tabs" style="margin:12px 0">
+    <button data-depmode="5050" class="active">50 / 50</button>
+    <button data-depmode="zap">⚡ Zap</button>
+  </div>
+  <div id="dep5050">
+    <p class="sub">50/50 by pool ratio — auto-staked in gauge</p>
+    <div class="field"><label id="depALbl">Token A amount</label><input id="depA" type="number" min="0" placeholder="0.0"></div>
+    <div class="field"><label>Token B amount (auto)</label><input id="depB" type="text" readonly placeholder="0.0"></div>
+    <button class="btn wfull" id="depBtn">Add liquidity</button>
+  </div>
+  <div id="depZap" style="display:none">
+    <p class="sub">Deposit one token — half is swapped automatically, then both sides go in as LP. Auto-staked in gauge.</p>
+    <div class="field"><label>Zap from</label><select id="zapTok"></select></div>
+    <div class="field"><label>Amount</label><input id="zapAmt" type="number" min="0" placeholder="0.0"></div>
+    <div class="quote-rows" id="zapRows"></div>
+    <button class="btn wfull" id="zapBtn" disabled>⚡ Zap &amp; add liquidity</button>
+  </div>
 </div></div>
 
 <!-- bribe -->

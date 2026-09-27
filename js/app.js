@@ -191,11 +191,13 @@ function renderLiq() {
       <td class="num">${ADADROME.fmtUSD(p.tvl)}</td>
       <td class="num">${ADADROME.fmtUSD(p.vol24h)}</td>
       <td class="num apr">${apr.total.toFixed(1)}%</td>
-      <td class="num"><button class="btn small" data-deposit="${p.id}">+ Add</button></td>
+      <td class="num"><button class="btn small" data-deposit="${p.id}">+ Add</button>
+        <button class="btn small ghost" data-zap="${p.id}" title="Deposit a single token">⚡ Zap</button></td>
     </tr>`;
   }).join("");
   $("#liqRows").innerHTML = rows;
   $$("#liqRows [data-deposit]").forEach(b => b.onclick = () => openDeposit(b.dataset.deposit));
+  $$("#liqRows [data-zap]").forEach(b => b.onclick = () => openZap(b.dataset.zap));
   const my = state.positions.map((x, i) => {
     const p = ADADROME.POOLS.find(q => q.id === x.poolId);
     return `<div class="qr"><span>${p.t0}/${p.t1} LP</span><b>${fmtAmt(x.t0amt, p.t0)} ${p.t0} + ${fmtAmt(x.t1amt, p.t1)} ${p.t1}
@@ -211,12 +213,74 @@ function renderLiq() {
   showLiqTab(state.liqTab || "classic");
 }
 let depositPool = null;
+let zapPlan = null; // { x, y, amt, half, outY, impact }
+function setDepMode(mode) {
+  $$("#depOverlay [data-depmode]").forEach(b => b.classList.toggle("active", b.dataset.depmode === mode));
+  $("#dep5050").style.display = mode === "5050" ? "" : "none";
+  $("#depZap").style.display = mode === "zap" ? "" : "none";
+}
 function openDeposit(poolId) {
   if (!state.wallet) return toast("Connect a wallet first.");
   depositPool = ADADROME.POOLS.find(p => p.id === poolId);
   $("#depTitle").textContent = `Add liquidity · ${depositPool.t0}/${depositPool.t1}`;
   $("#depA").value = ""; $("#depB").value = "";
+  setDepMode("5050");
   $("#depOverlay").classList.add("open");
+}
+function openZap(poolId) {
+  if (!state.wallet) return toast("Connect a wallet first.");
+  depositPool = ADADROME.POOLS.find(p => p.id === poolId);
+  $("#depTitle").textContent = `⚡ Zap into ${depositPool.t0}/${depositPool.t1}`;
+  $("#zapTok").innerHTML = [depositPool.t0, depositPool.t1]
+    .map(s => `<option value="${s}">${s} — bal ${fmtAmt(state.balances[s] || 0, s)}</option>`).join("");
+  $("#zapAmt").value = ""; zapPlan = null; renderZap();
+  setDepMode("zap");
+  $("#depOverlay").classList.add("open");
+}
+function zapCompute() {
+  const p = depositPool, x = $("#zapTok").value, y = x === p.t0 ? p.t1 : p.t0;
+  const amt = parseFloat($("#zapAmt").value);
+  zapPlan = null;
+  if (!p || !x || !amt || amt <= 0) return;
+  if ((state.balances[x] || 0) < amt) return; // insufficient: keep plan null
+  const half = amt / 2;
+  const q = quote(x, y, half);
+  if (!q) return;
+  zapPlan = { x, y, amt, half, outY: q.out, impact: q.impact };
+}
+function renderZap() {
+  zapCompute();
+  const rows = $("#zapRows"), btn = $("#zapBtn");
+  if (!zapPlan) {
+    const x = $("#zapTok").value, amt = parseFloat($("#zapAmt").value);
+    rows.innerHTML = amt > 0 && (state.balances[x] || 0) < amt
+      ? `<div class="qr"><span class="bad">Insufficient ${x} balance.</span></div>`
+      : `<div class="qr"><span>Enter an amount to preview the zap.</span></div>`;
+    btn.disabled = true; return;
+  }
+  const z = zapPlan, p = depositPool;
+  const t0amt = z.x === p.t0 ? z.half : z.outY;
+  const t1amt = z.x === p.t0 ? z.outY : z.half;
+  const ic = z.impact < 1 ? "" : z.impact < 5 ? "warn" : "bad";
+  rows.innerHTML = `
+    <div class="qr"><span>Swap leg</span><b>${fmtAmt(z.half, z.x)} ${z.x} → ${fmtAmt(z.outY, z.y)} ${z.y}</b></div>
+    <div class="qr"><span>Swap price impact</span><b class="${ic}">${z.impact.toFixed(2)}%</b></div>
+    <div class="qr"><span>LP deposit</span><b>${fmtAmt(t0amt, p.t0)} ${p.t0} + ${fmtAmt(t1amt, p.t1)} ${p.t1}</b></div>
+    <div class="qr"><span>Result</span><b>LP position, auto-staked in gauge</b></div>`;
+  btn.disabled = false;
+}
+function doZap() {
+  const z = zapPlan, p = depositPool;
+  if (!z) return toast("Enter an amount first.");
+  if ((state.balances[z.x] || 0) < z.amt) return toast("Insufficient " + z.x + " balance.");
+  const t0amt = z.x === p.t0 ? z.half : z.outY;
+  const t1amt = z.x === p.t0 ? z.outY : z.half;
+  state.balances[z.x] -= z.amt;
+  state.positions.push({ poolId: p.id, t0amt, t1amt });
+  state.txs.unshift({ kind: "⚡ Zap", detail: `${fmtAmt(z.amt, z.x)} ${z.x} → ${p.t0}/${p.t1} LP`, t: Date.now() });
+  $("#depOverlay").classList.remove("open");
+  save(); renderLiq();
+  toast(`Zapped ${fmtAmt(z.amt, z.x)} ${z.x} into ${p.t0}/${p.t1} LP (simulated).`);
 }
 function depQuote() {
   const a = parseFloat($("#depA").value);
@@ -403,6 +467,10 @@ function init() {
   $("#depA").oninput = depQuote;
   $("#depBtn").onclick = doDeposit;
   $("#depClose").onclick = () => $("#depOverlay").classList.remove("open");
+  $$("#depOverlay [data-depmode]").forEach(b => b.onclick = () => setDepMode(b.dataset.depmode));
+  $("#zapTok").onchange = renderZap;
+  $("#zapAmt").oninput = renderZap;
+  $("#zapBtn").onclick = doZap;
   // vote
   $("#lockWeeks").oninput = e => {
     $("#lockWeeksLbl").textContent = e.target.value + " weeks";
