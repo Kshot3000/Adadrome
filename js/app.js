@@ -553,11 +553,11 @@ function openCLDetail(poolId) {
   $("#clDetailTitle").textContent = `${p.t0} / ${p.t1} · concentrated`;
   $("#clDetailSub").textContent = `Fee tier ${(p.fee * 100).toFixed(2)}% · tick spacing ${p.spacing} · current tick ${ADADD_tick(p)}`;
   $("#clDetailOverlay").classList.add("open");
-  requestAnimationFrame(() => drawDepth(p, null));
+  requestAnimationFrame(() => drawDepth(p, null, "depthChart"));
 }
 function ADADD_tick(p) { return ADADROME.clTick(p); }
-function drawDepth(p, range) {
-  const c = $("#depthChart"); if (!c) return;
+function drawDepth(p, range, canvasId) {
+  const c = document.getElementById(canvasId || "depthChart"); if (!c) return;
   const dpr = window.devicePixelRatio || 1, w = c.clientWidth, h = 220;
   c.width = w * dpr; c.height = h * dpr;
   const x = c.getContext("2d"); x.scale(dpr, dpr);
@@ -646,6 +646,7 @@ function clRecalc() {
     ${note ? `<div class="qr"><span></span><b class="warn">${note}</b></div>` : ""}`;
   $("#clMintBtn").disabled = !(a0 > 0 && L > 0);
   clAdd.calc = { r, L, needA1, a0 };
+  requestAnimationFrame(() => drawDepth(p, [r.tickL, r.tickU], "clRangeChart"));
 }
 function mintCL() {
   const p = clPool(clAdd.poolId), c = clAdd.calc;
