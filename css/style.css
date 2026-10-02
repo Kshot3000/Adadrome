@@ -196,6 +196,7 @@ footer {
   text-align: center; color: var(--mut); font-size: 12px;
 }
 footer .don { font-family: monospace; font-size: 11px; word-break: break-all; color: #a9b6dd; margin-top: 8px; }
+footer a { color: #c9d6ff; font-weight: 700; }
 .toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
   background: var(--card2); border: 1px solid var(--line); color: var(--txt);

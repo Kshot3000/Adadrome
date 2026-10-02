@@ -90,30 +90,10 @@ function renderWallet() {
 }
 
 /* ---------- SWAP ---------- */
-function poolFor(a, b) {
-  return ADADROME.POOLS.find(p => (p.t0 === a && p.t1 === b) || (p.t0 === b && p.t1 === a));
-}
-function quote(from, to, amtIn) {
-  const pool = poolFor(from, to);
-  if (!pool || !amtIn || amtIn <= 0) return null;
-  const fwd = pool.t0 === from;
-  const rIn = fwd ? pool.r0 : pool.r1, rOut = fwd ? pool.r1 : pool.r0;
-  const fee = pool.fee;
-  const amtInFee = amtIn * (1 - fee);
-  let out;
-  if (pool.type === "stable") {
-    // StableSwap approx: near 1:1 on price-adjusted reserves, mild curvature
-    const px = ADADROME.TOKENS[from].price / ADADROME.TOKENS[to].price;
-    const depth = Math.min(1, rIn / (amtIn * 20));
-    out = amtInFee * px * (1 - 0.001 * (1 - depth));
-  } else {
-    out = (amtInFee * rOut) / (rIn + amtInFee);
-  }
-  const midPx = (rOut / rIn);
-  const effPx = out / amtIn;
-  const impact = Math.abs((effPx - midPx) / midPx) * 100;
-  return { out, impact, fee, pool, rate: midPx };
-}
+// Swap quoting lives in js/data.js (ADADROME.quote) so it is unit-testable
+// without a DOM; these wrappers keep the app's call sites unchanged.
+function poolFor(a, b) { return ADADROME.poolFor(a, b); }
+function quote(from, to, amtIn) { return ADADROME.quote(from, to, amtIn); }
 function renderSwap() {
   const s = state.swap, T = ADADROME.TOKENS;
   const q = quote(s.from, s.to, parseFloat(s.fromAmt));
@@ -462,6 +442,11 @@ function init() {
     $("#pickerOverlay").classList.remove("open"); renderSwap();
   };
   $$(".overlay").forEach(o => o.addEventListener("click", e => { if (e.target === o) o.classList.remove("open"); }));
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    const open = $$(".overlay.open");
+    if (open.length) open[open.length - 1].classList.remove("open");
+  });
   $("#pickerClose").onclick = () => $("#pickerOverlay").classList.remove("open");
   // liquidity
   $("#depA").oninput = depQuote;

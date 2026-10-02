@@ -27,6 +27,14 @@ Or visit the live GitHub Pages deploy: **https://kshot3000.github.io/Adadrome/**
 
 ## Tech
 
-Plain HTML/CSS/JS. Tick math follows the Uniswap v3 whitepaper (`p(tick) = 1.0001^tick`).
+Plain HTML/CSS/JS. Tick math follows the Uniswap v3 whitepaper (`p(tick) = 1.0001^tick`). Swap quoting lives in `js/data.js` (`ADADROME.quote`) so it is unit-testable without a DOM.
+
+## Tests
+
+```bash
+node --test tests/smoke.test.mjs   # quote math (incl. the stable-pool price-ratio fix) + page hygiene guards
+```
+
+Assets are referenced with `?v=` cache keys in `index.html` — bump the key for any JS/CSS file you change in a release.
 
 Built by [@kshot9000](https://x.com/kshot9000)

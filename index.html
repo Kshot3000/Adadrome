@@ -5,7 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Adadrome — Cardano's Liquidity Hub</title>
 <meta name="description" content="Adadrome: the ve(3,3) DEX on Cardano. Swap, provide liquidity, lock DROME for veDROME, vote gauges, earn bribes.">
-<link rel="stylesheet" href="css/style.css">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Adadrome — Cardano's Liquidity Hub">
+<meta property="og:description" content="A ve(3,3) DEX concept for Cardano with concentrated liquidity. Demo build — all figures simulated.">
+<meta property="og:url" content="https://kshot3000.github.io/Adadrome/">
+<link rel="stylesheet" href="css/style.css?v=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
@@ -137,7 +141,7 @@
     <div class="how">
       <div class="card"><span class="step">FOR PROTOCOLS</span><h4>Rent liquidity, don't buy it</h4><p>Deposit bribes on your gauge and veDROME voters route DROME emissions to your pool — often 3–5× cheaper than direct LP incentives.</p></div>
       <div class="card"><span class="step">FOR VOTERS</span><h4>Get paid to vote</h4><p>Vote for bribed gauges and claim the bribes plus 100% of that pool's trading fees at epoch end.</p></div>
-      <div class="card"><span class="step">FLYWHEL</span><h4>The ve(3,3) loop</h4><p>Bribes → votes → emissions → deeper liquidity → more volume → more fees → more locks. That's the flywheel Aerodrome proved on Base, rebuilt for Cardano.</p></div>
+      <div class="card"><span class="step">FLYWHEEL</span><h4>The ve(3,3) loop</h4><p>Bribes → votes → emissions → deeper liquidity → more volume → more fees → more locks. That's the flywheel Aerodrome proved on Base, rebuilt for Cardano.</p></div>
     </div>
   </section>
 
@@ -154,7 +158,7 @@
     </div>
     <div class="grid2">
       <div class="card"><h3>Volume by pool (24h)</h3><p class="sub">Simulated</p><canvas class="chart" id="volChart"></canvas></div>
-      <div class="card"><h3>Top pools by volume</h3><p class="sub">Live gauge APRs</p>
+      <div class="card"><h3>Top pools by volume</h3><p class="sub">Simulated gauge APRs</p>
         <div class="tbl-wrap" style="border:none"><table style="min-width:0">
           <thead><tr><th>Pool</th><th class="num">Vol 24h</th><th class="num">TVL</th><th class="num">APR</th></tr></thead>
           <tbody id="topRows"></tbody>
@@ -163,7 +167,7 @@
     </div>
     <div class="how">
       <div class="card"><span class="step">TOKENOMICS</span><h4>ve(3,3) on Cardano</h4><p>DROME is emitted each 5-day epoch to gauges by veDROME vote. Lockers get a rebase offsetting dilution, 100% of trading fees, and all bribes for gauges they vote on. No team farm — emissions only flow where voters point them.</p></div>
-      <div class="card"><span class="step">POOLS</span><h4>Stable + volatile</h4><p>Stable pools (x³y + xy³ ≈ k) for pegged assets like DJED/iUSD with 0.02–0.05% fees; volatile pools (x·y = k) for everything else at 0.30%. Concentrated liquidity ranges coming in v2.</p></div>
+      <div class="card"><span class="step">POOLS</span><h4>Stable + volatile</h4><p>Stable pools (x³y + xy³ ≈ k) for pegged assets like DJED/iUSD with 0.02–0.05% fees; volatile pools (x·y = k) for everything else at 0.30%. Concentrated-liquidity tick ranges are live in the Liquidity tab (v2).</p></div>
       <div class="card"><span class="step">GOVERNANCE</span><h4>5-day epochs</h4><p>Cardano-native 5-day epochs. Vote, claim, and re-lock on epoch boundaries. veNFTs are transferable — vote power trades on secondary markets.</p></div>
     </div>
   </section>
@@ -171,14 +175,14 @@
 </div>
 
 <!-- token picker -->
-<div class="overlay" id="pickerOverlay"><div class="modal">
-  <button class="x" id="pickerClose">✕</button><h3>Select token</h3><p class="sub">Demo balances shown</p>
+<div class="overlay" id="pickerOverlay"><div class="modal" role="dialog" aria-modal="true" aria-label="Select token">
+  <button class="x" id="pickerClose" aria-label="Close">✕</button><h3>Select token</h3><p class="sub">Demo balances shown</p>
   <div class="tok-list" id="tokList"></div>
 </div></div>
 
 <!-- deposit -->
-<div class="overlay" id="depOverlay"><div class="modal">
-  <button class="x" id="depClose">✕</button><h3 id="depTitle">Add liquidity</h3>
+<div class="overlay" id="depOverlay"><div class="modal" role="dialog" aria-modal="true" aria-label="Add liquidity">
+  <button class="x" id="depClose" aria-label="Close">✕</button><h3 id="depTitle">Add liquidity</h3>
   <div class="tabs" style="margin:12px 0">
     <button data-depmode="5050" class="active">50 / 50</button>
     <button data-depmode="zap">⚡ Zap</button>
@@ -199,22 +203,22 @@
 </div></div>
 
 <!-- bribe -->
-<div class="overlay" id="bribeOverlay"><div class="modal">
-  <button class="x" id="bribeClose">✕</button><h3>Add bribe</h3><p class="sub">Gauge: <b id="bribePoolName"></b></p>
+<div class="overlay" id="bribeOverlay"><div class="modal" role="dialog" aria-modal="true" aria-label="Add bribe">
+  <button class="x" id="bribeClose" aria-label="Close">✕</button><h3>Add bribe</h3><p class="sub">Gauge: <b id="bribePoolName"></b></p>
   <div class="field"><label>Bribe amount (in that gauge's bribe token)</label><input id="bribeAmt" type="number" min="0" placeholder="0.0"></div>
   <button class="btn wfull" id="bribeBtn">Deposit bribe</button>
 </div></div>
 
 <!-- CL pool detail -->
-<div class="overlay" id="clDetailOverlay"><div class="modal" style="max-width:560px">
-  <button class="x" id="clDetailClose">✕</button><h3 id="clDetailTitle">Pool</h3><p class="sub" id="clDetailSub"></p>
+<div class="overlay" id="clDetailOverlay"><div class="modal" role="dialog" aria-modal="true" aria-label="Pool detail" style="max-width:560px">
+  <button class="x" id="clDetailClose" aria-label="Close">✕</button><h3 id="clDetailTitle">Pool</h3><p class="sub" id="clDetailSub"></p>
   <canvas class="chart" id="depthChart" style="height:220px"></canvas>
   <p class="mut" style="margin-top:8px">Liquidity depth by price · gold line = current price. Green band = your selected range.</p>
 </div></div>
 
 <!-- CL new position -->
-<div class="overlay" id="clAddOverlay"><div class="modal" style="max-width:480px">
-  <button class="x" id="clAddClose">✕</button><h3 id="clAddTitle">New position</h3><p class="sub" id="clAddSub"></p>
+<div class="overlay" id="clAddOverlay"><div class="modal" role="dialog" aria-modal="true" aria-label="New concentrated position" style="max-width:480px">
+  <button class="x" id="clAddClose" aria-label="Close">✕</button><h3 id="clAddTitle">New position</h3><p class="sub" id="clAddSub"></p>
   <div class="field"><label>Price range</label>
     <div class="presets">
       <button data-preset="5">±5%</button><button data-preset="10" class="active">±10%</button>
@@ -234,11 +238,11 @@
 
 <footer>
   <div><b>Adadrome</b> — a ve(3,3) DEX concept for Cardano. Demo build: all figures simulated.</div>
-  <div style="margin-top:6px">Built by <b>@kshot9000</b></div>
-  <div class="don">3GnR7TWBXAB3pPztBWpNF4LMNEX5yX8vZK</div>
+  <div style="margin-top:6px">Built by <a href="https://x.com/kshot9000" target="_blank" rel="noopener">@kshot9000</a></div>
+  <div class="don">Donate (BTC): 3GnR7TWBXAB3pPztBWpNF4LMNEX5yX8vZK</div>
 </footer>
 
-<script src="js/data.js"></script>
-<script src="js/app.js"></script>
+<script src="js/data.js?v=1"></script>
+<script src="js/app.js?v=1"></script>
 </body>
 </html>

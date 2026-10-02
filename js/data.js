@@ -66,6 +66,35 @@ const ADADROME = (() => {
     return { epoch: epoch + 1, remaining };
   }
 
+  function poolFor(a, b) {
+    return POOLS.find(p => (p.t0 === a && p.t1 === b) || (p.t0 === b && p.t1 === a));
+  }
+  function quote(from, to, amtIn) {
+    const pool = poolFor(from, to);
+    if (!pool || !amtIn || amtIn <= 0) return null;
+    const fwd = pool.t0 === from;
+    const rIn = fwd ? pool.r0 : pool.r1, rOut = fwd ? pool.r1 : pool.r0;
+    const fee = pool.fee;
+    const amtInFee = amtIn * (1 - fee);
+    let out, midPx;
+    if (pool.type === "stable") {
+      // StableSwap approx: the mid price is the tokens' price ratio, NOT the
+      // reserve ratio. The stable reserves are seeded in equal token counts
+      // even when prices differ (e.g. ADA/DJED at 0.85), so rOut/rIn (= 1)
+      // misstates both the displayed rate and the price impact — it made
+      // every ADA stable swap read ~15%+ impact and trip the swap guard.
+      midPx = TOKENS[from].price / TOKENS[to].price;
+      const depth = Math.min(1, rIn / (amtIn * 20));
+      out = amtInFee * midPx * (1 - 0.001 * (1 - depth));
+    } else {
+      midPx = rOut / rIn;
+      out = (amtInFee * rOut) / (rIn + amtInFee);
+    }
+    const effPx = out / amtIn;
+    const impact = Math.abs((effPx - midPx) / midPx) * 100;
+    return { out, impact, fee, pool, rate: midPx };
+  }
+
   /* ---------- Concentrated liquidity pools (Uniswap v3-style ticks) ----------
      price = human t1 per t0. tick price: p(tick) = 1.0001^tick            */
   const CLPOOLS = [
@@ -106,5 +135,5 @@ const ADADROME = (() => {
     liqForA1(sqrtA, sqrtB, a1) { return a1 / (sqrtB - sqrtA); },
   };
 
-  return { TOKENS, POOLS, GAUGES, BRIBES, CLPOOLS, clTick, tickPrice, clDepth, CLM, EPOCH_SECONDS, EMISSIONS_PER_EPOCH, MAX_LOCK_WEEKS, fmtUSD, fmtNum, epochInfo };
+  return { TOKENS, POOLS, GAUGES, BRIBES, CLPOOLS, poolFor, quote, clTick, tickPrice, clDepth, CLM, EPOCH_SECONDS, EMISSIONS_PER_EPOCH, MAX_LOCK_WEEKS, fmtUSD, fmtNum, epochInfo };
 })();
