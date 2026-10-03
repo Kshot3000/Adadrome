@@ -203,7 +203,7 @@ function openDeposit(poolId) {
   if (!state.wallet) return toast("Connect a wallet first.");
   depositPool = ADADROME.POOLS.find(p => p.id === poolId);
   $("#depTitle").textContent = `Add liquidity · ${depositPool.t0}/${depositPool.t1}`;
-  $("#depA").value = ""; $("#depB").value = "";
+  $("#depA").value = ""; $("#depB").value = ""; depPlan = null;
   setDepMode("5050");
   $("#depOverlay").classList.add("open");
 }
@@ -262,18 +262,18 @@ function doZap() {
   save(); renderLiq();
   toast(`Zapped ${fmtAmt(z.amt, z.x)} ${z.x} into ${p.t0}/${p.t1} LP (simulated).`);
 }
+let depPlan = null; // { a, b } full-precision pair from ADADROME.depositPair
 function depQuote() {
   const a = parseFloat($("#depA").value);
-  if (!a || a <= 0 || !depositPool) { $("#depB").value = ""; return; }
-  const p = depositPool, T = ADADROME.TOKENS;
-  const ratio = (p.r1 / p.r0) * (T[p.t0].price / T[p.t1].price) / (T[p.t0].price / T[p.t1].price);
-  const b = a * (p.r1 / p.r0);
-  $("#depB").value = fmtAmt(b, p.t1);
+  depPlan = depositPool ? ADADROME.depositPair(depositPool, a) : null;
+  // depB is DISPLAY ONLY (fmtAmt abbreviates to K/M/B) — never parse it back.
+  $("#depB").value = depPlan ? fmtAmt(depPlan.b, depositPool.t1) : "";
 }
 function doDeposit() {
-  const p = depositPool, a = parseFloat($("#depA").value);
-  const b = parseFloat($("#depB").value.replace(/[^0-9.]/g, ""));
-  if (!a || !b || a <= 0) return toast("Enter an amount.");
+  const p = depositPool;
+  depQuote(); // recompute from the current input; never trust the display field
+  if (!depPlan) return toast("Enter an amount.");
+  const { a, b } = depPlan;
   if ((state.balances[p.t0] || 0) < a || (state.balances[p.t1] || 0) < b) return toast("Insufficient balance.");
   state.balances[p.t0] -= a; state.balances[p.t1] -= b;
   state.positions.push({ poolId: p.id, t0amt: a, t1amt: b });
@@ -432,7 +432,7 @@ function init() {
   $("#swapToBtn").onclick = () => openPicker("to");
   $("#flipBtn").onclick = () => { const s = state.swap; [s.from, s.to] = [s.to, s.from]; s.fromAmt = ""; $("#swapFromAmt").value = ""; renderSwap(); };
   $("#swapBtn").onclick = doSwap;
-  $("#slipSel").onchange = e => state.swap.slippage = +e.target.value;
+  $("#slipSel").onchange = e => { state.swap.slippage = +e.target.value; renderSwap(); }; // re-render so Min. received tracks the new slippage
   $("#tokList").onclick = e => {
     const it = e.target.closest("[data-sym]"); if (!it) return;
     const sym = it.dataset.sym, s = state.swap;

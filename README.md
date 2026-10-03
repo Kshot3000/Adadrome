@@ -32,7 +32,7 @@ Plain HTML/CSS/JS. Tick math follows the Uniswap v3 whitepaper (`p(tick) = 1.000
 ## Tests
 
 ```bash
-node --test tests/smoke.test.mjs   # quote math (incl. the stable-pool price-ratio fix) + page hygiene guards
+node --test tests/smoke.test.mjs   # quote + deposit-pair math (incl. the stable-pool price-ratio and depB parse-back fixes) + page hygiene guards
 ```
 
 Assets are referenced with `?v=` cache keys in `index.html` — bump the key for any JS/CSS file you change in a release.

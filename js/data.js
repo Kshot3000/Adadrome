@@ -95,6 +95,16 @@ const ADADROME = (() => {
     return { out, impact, fee, pool, rate: midPx };
   }
 
+  /* Classic 50/50 deposit: token B amount follows the pool's reserve ratio.
+     Returns FULL precision — callers must use these numbers for balances and
+     positions, and format only for display. (The old flow formatted B with
+     fmtAmt into the readonly depB field — "1.87K" — and doDeposit parsed that
+     string back, silently charging ~1/1000 of the true paired amount.) */
+  function depositPair(pool, a) {
+    if (!pool || !a || a <= 0 || !Number.isFinite(a)) return null;
+    return { a, b: a * (pool.r1 / pool.r0) };
+  }
+
   /* ---------- Concentrated liquidity pools (Uniswap v3-style ticks) ----------
      price = human t1 per t0. tick price: p(tick) = 1.0001^tick            */
   const CLPOOLS = [
@@ -135,5 +145,5 @@ const ADADROME = (() => {
     liqForA1(sqrtA, sqrtB, a1) { return a1 / (sqrtB - sqrtA); },
   };
 
-  return { TOKENS, POOLS, GAUGES, BRIBES, CLPOOLS, poolFor, quote, clTick, tickPrice, clDepth, CLM, EPOCH_SECONDS, EMISSIONS_PER_EPOCH, MAX_LOCK_WEEKS, fmtUSD, fmtNum, epochInfo };
+  return { TOKENS, POOLS, GAUGES, BRIBES, CLPOOLS, poolFor, quote, depositPair, clTick, tickPrice, clDepth, CLM, EPOCH_SECONDS, EMISSIONS_PER_EPOCH, MAX_LOCK_WEEKS, fmtUSD, fmtNum, epochInfo };
 })();

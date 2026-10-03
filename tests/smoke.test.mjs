@@ -62,6 +62,28 @@ test("quote rejects empty/invalid input; poolFor is symmetric", () => {
   assert.equal(A.poolFor("DJED", "ADA"), A.poolFor("ADA", "DJED"));
 });
 
+test("depositPair: full-precision reserve-ratio pair (regression: depB parse-back bug)", () => {
+  const p = A.poolFor("ADA", "MIN");
+  const pair = A.depositPair(p, 100);
+  near(pair.b, 100 * (p.r1 / p.r0), 1e-9, "paired MIN amount");
+  assert.ok(pair.b > 1000, "paired amount is in the range the old fmtAmt parse-back mangled");
+  // The old flow displayed fmtAmt(b)="1.87K" in depB and parsed it back to 1.87.
+  // depositPair must return the un-abbreviated number.
+  assert.notEqual(pair.b, 1.87);
+  const stable = A.depositPair(A.poolFor("ADA", "DJED"), 250);
+  near(stable.b, 250, 1e-9, "equal-reserve stable pool pairs 1:1 in token counts");
+  assert.equal(A.depositPair(p, 0), null);
+  assert.equal(A.depositPair(p, -5), null);
+  assert.equal(A.depositPair(p, NaN), null);
+  assert.equal(A.depositPair(null, 100), null);
+});
+
+test("app.js never parses the formatted depB display back into an amount", () => {
+  assert.ok(!appJs.includes('$("#depB").value.replace'), "depB is display-only; parsing fmtAmt output loses the K/M suffix");
+  assert.match(appJs, /ADADROME\.depositPair/, "deposit math single-sourced in data.js");
+  assert.match(appJs, /slipSel.*renderSwap\(\)/, "changing slippage re-renders so Min. received stays accurate");
+});
+
 test("CL math: liq/amounts round-trip and tick price consistency", () => {
   const { CLM } = A;
   const sqrtA = Math.sqrt(0.7), sqrtB = Math.sqrt(1.1), sqrtP = Math.sqrt(0.85);
@@ -79,7 +101,7 @@ test("app.js delegates quoting to ADADROME (single source of truth)", () => {
 });
 
 test("index.html: versioned assets, honest copy, attribution", () => {
-  for (const ref of ["css/style.css?v=1", "js/data.js?v=1", "js/app.js?v=1"])
+  for (const ref of ["css/style.css?v=1", "js/data.js?v=2", "js/app.js?v=2"])
     assert.ok(html.includes(ref), `missing cache-busted ref ${ref}`);
   assert.ok(!html.includes("coming in v2"), "CL v2 already shipped — no 'coming in v2'");
   assert.ok(!html.includes("Live gauge APRs"), "demo figures must not be labeled Live");
